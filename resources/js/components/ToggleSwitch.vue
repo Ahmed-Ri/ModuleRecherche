@@ -43,8 +43,8 @@ export default {
 
 .switch-button {
   flex: 1;
-  padding: 10px 10px;
-  background: none;
+  padding: 7px 7px;
+  background-color: #ffffff;
   border: none;
   cursor: pointer;
   font-size: 14px;
@@ -55,11 +55,12 @@ export default {
 }
 
 .switch-button.active {
-  background-color: #cbffe9;
-  color: rgb(0, 0, 0);
+  background-color: #4C7DFB;
+  color: rgb(255, 255, 255);
 }
 
 .switch-button i {
   margin-right: 5px;
+  
 }
 </style>

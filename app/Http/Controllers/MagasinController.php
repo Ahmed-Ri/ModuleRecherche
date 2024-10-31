@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\Magasin;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 
@@ -19,12 +20,42 @@ class MagasinController extends Controller
 
 public function getCategories(Magasin $magasin)
 {
-    // Récupérer toutes les catégories associées au magasin
-    // Filtrer pour ne récupérer que les sous-sous-catégories (catégories avec un parent qui a aussi un parent)
-    $subSubCategories = $magasin->categories()->whereHas('parent.parent')->get();
+    $categories = DB::table('magasin_category')
+        ->where('magasin_id', $magasin->id)
+        // Joindre les catégories principales
+        ->join('categories as main', 'magasin_category.main_category_id', '=', 'main.id')
+        // Joindre les sous-catégories (si disponibles)
+        ->leftJoin('categories as sub', 'magasin_category.subcategory_id', '=', 'sub.id')
+        // Joindre les sous-sous-catégories (si disponibles)
+        ->leftJoin('categories as cat', 'magasin_category.category_id', '=', 'cat.id')
+        ->select(
+            'main.name as main_category',         // Nom de la catégorie principale
+            'sub.name as sub_category',           // Nom de la sous-catégorie
+            'cat.name as sub_sub_category',       // Nom de la sous-sous-catégorie (précédemment 'category')
+            'magasin_category.category_id',       // ID de la sous-sous-catégorie
+            'magasin_category.subcategory_id',    // ID de la sous-catégorie
+            'magasin_category.main_category_id'   // ID de la catégorie principale
+        )
+        ->get();
 
-    return response()->json($subSubCategories);
+    // Formater les résultats pour retourner les catégories, sous-catégories et sous-sous-catégories
+    $formattedCategories = [];
+
+    foreach ($categories as $category) {
+        $formattedCategories[] = [
+            'main' => $category->main_category,         // Catégorie principale
+            'sub' => $category->sub_category,           // Sous-catégorie
+            'sub_sub' => $category->sub_sub_category,   // Sous-sous-catégorie
+            'category_id' => $category->category_id,    // ID de la sous-sous-catégorie
+            'subcategory_id' => $category->subcategory_id, // ID de la sous-catégorie
+            'main_category_id' => $category->main_category_id, // ID de la catégorie principale
+        ];
+    }
+
+    return response()->json($formattedCategories);
 }
+
+
 
     
     
@@ -34,7 +65,7 @@ public function getCategories(Magasin $magasin)
         // Valider que `category_ids` est un tableau et que chaque élément est un entier valide existant dans la table `categories`
         $validated = $request->validate([
             'category_ids' => 'required|array', // Vérifier que `category_ids` est un tableau
-            'category_ids.*' => 'integer|exists:categories,id', // Vérifier que chaque élément du tableau est un entier et existe dans `categories`
+            'category_ids.*' => 'string|exists:categories,id', // Vérifier que chaque élément du tableau est un entier et existe dans `categories`
         ]);
     
         // Initialiser un tableau pour stocker tous les IDs de catégories à affecter
@@ -165,15 +196,39 @@ public function uploadImage(Request $request, $id)
     return response()->json(['message' => 'No image uploaded'], 400);
 }
 
-public function removeCategory(Magasin $magasin, Category $category)
-{
-    // Détacher la catégorie du magasin
-    $magasin->categories()->detach($category->id);
 
-    return response()->json(['message' => 'Catégorie supprimée avec succès']);
+
+public function removeSubCategory(Magasin $magasin, $subcategoryId)
+{
+    // Supprimer la sous-catégorie et les sous-sous-catégories associées
+    DB::table('magasin_category')
+        ->where('magasin_id', $magasin->id)
+        ->where('subcategory_id', $subcategoryId)
+        ->delete();
+
+    return response()->json(['message' => 'Sous-catégorie et ses sous-sous-catégories supprimées avec succès']);
 }
 
+public function removeSubSubCategory(Magasin $magasin, $categoryId)
+{
+    // Supprimer uniquement la sous-sous-catégorie
+    DB::table('magasin_category')
+        ->where('magasin_id', $magasin->id)
+        ->where('category_id', $categoryId)
+        ->delete();
 
+    return response()->json(['message' => 'Sous-sous-catégorie supprimée avec succès']);
+}
+public function removeMainCategory(Magasin $magasin, $mainCategoryId)
+{
+    // Supprimer toutes les associations entre le magasin et cette catégorie principale (ainsi que ses sous-catégories et sous-sous-catégories)
+    DB::table('magasin_category')
+        ->where('magasin_id', $magasin->id)
+        ->where('main_category_id', $mainCategoryId)
+        ->delete();
+
+    return response()->json(['message' => 'Catégorie principale et ses sous-catégories supprimées avec succès']);
+}
 
     
 }

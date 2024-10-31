@@ -17,11 +17,13 @@ Route::post('/categories/{id}/upload-image', [CategoryController::class, 'upload
 //MagasinController
 Route::get('/magasins', [MagasinController::class, 'index']);
 Route::post('/magasins/{magasin}/categories', [MagasinController::class, 'addCategory']);
-Route::delete('/magasins/{magasin}/categories/{category}', [MagasinController::class, 'removeCategory']);
 Route::get('/magasins/{magasin}/categories', [MagasinController::class, 'getCategories']);
 Route::post('/magasins', [MagasinController::class, 'searchMagasinsByCategoryAndLocation']);
 Route::post('/magasins/nearby', [MagasinController::class, 'getMagasinsAutourDeMoi']);
 Route::post('/magasins/search-by-radius', [MagasinController::class, 'searchMagasinsByRadius']);
 Route::post('/magasins/{id}/upload-image', [MagasinController::class, 'uploadImage']);
 
+Route::delete('/magasins/{magasin}/categories/{subcategory}/remove-subcategory', [MagasinController::class, 'removeSubCategory']);
+Route::delete('/magasins/{magasin}/categories/{category}/remove-subsub-category', [MagasinController::class, 'removeSubSubCategory']);
+Route::delete('/magasins/{magasin}/categories/{mainCategory}/remove-main-category', [MagasinController::class, 'removeMainCategory']);
 

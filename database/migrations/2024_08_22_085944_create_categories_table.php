@@ -13,11 +13,14 @@ class CreateCategoriesTable extends Migration
     public function up()
     {
         Schema::create('categories', function (Blueprint $table) {
-            $table->id();
+            $table->string('id')->primary(); // Utiliser une chaîne de caractères comme clé primaire
             $table->string('name');
             $table->string('image')->nullable();
-            $table->foreignId('parent_id')->nullable()->constrained('categories')->onDelete('cascade');
+            $table->string('parent_id')->nullable(); // `parent_id` sera également une chaîne
             $table->timestamps();
+    
+            // Clé étrangère pour `parent_id` reliant une catégorie à une autre
+            $table->foreign('parent_id')->references('id')->on('categories')->onDelete('cascade');
         });
     }
 

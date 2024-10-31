@@ -1,120 +1,125 @@
 <template>
-    <div class="container mx-auto p-4">
-        <div
-            class="overflow-x-auto shadow-lg sm:rounded-lg custom-table-container"
-        >
+    <div class="container mx-auto mb-5" style="padding-left: 47px; padding-right: 47px;">
+        <div class="overflow-x-auto shadow-lg sm:rounded-lg custom-table-container">
             <table class="table-categories">
                 <thead>
                     <tr>
-                        <th>Catégorie</th>
-                        <th>Sous-catégorie</th>
-                        <th>Sous-sous-catégorie</th>
-                        <th>Images</th>
-                        <!-- Nouvelle colonne pour l'image -->
+                        <th>CATEGORIES</th>
+                        <th>PHOTO</th>
+                        <th>SOUS-CATEGORIES</th>
+                        <th>PHOTO</th>
+                        <th>SOUS-SOUS-CATEGORIES</th>
+                        <th>PHOTO</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr v-for="category in categories" :key="category.id">
-                        <td>{{ category.name }}</td>
-                        <td>
-                            <ul>
-                                <li
-                                    v-for="child in category.children"
-                                    :key="child.id"
-                                >
-                                    {{ child.name }}
-                                </li>
-                            </ul>
-                        </td>
-                        <td>
-                            <ul>
-                                <li
-                                    v-for="child in category.children"
-                                    :key="child.id"
-                                >
-                                    <ul v-if="child.children.length > 0">
-                                        <li
-                                            v-for="subChild in child.children"
-                                            :key="subChild.id"
-                                        >
-                                            {{ subChild.name }}
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </td>
-                        <td>
-                            <!-- Colonne pour l'image et le bouton d'insertion -->
-                            <ul>
-                                <li
-                                    v-for="child in category.children"
-                                    :key="child.id"
-                                >
-                                    <ul v-if="child.children.length > 0">
-                                        <li
-                                            v-for="subChild in child.children"
-                                            :key="subChild.id"
-                                        >
-                                            <div
-                                                class="image-button-container d-flex"
-                                            >
-                                                <!-- Afficher l'image si elle est présente -->
-                                                <div v-if="subChild.image">
-                                                    <img
-                                                        :src="subChild.image"
-                                                        alt="Image de la catégorie"
-                                                        class="category-image mr-2"
-                                                        style="
-                                                            height: 30px;
-                                                            width: 30px;
-                                                        "
-                                                    />
-                                                </div>
-                                                <!-- Afficher le bouton pour ajouter une image -->
-                                                <button
-                                                    @click="
-                                                        uploadImage(subChild.id)
-                                                    "
-                                                    class="image-upload-btn"
-                                                >
-                                                    {{
-                                                        subChild.image
-                                                            ? "Changer"
-                                                            : "Inserer"
-                                                    }}
-                                                </button>
-                                                <input
-                                                    type="file"
-                                                    :id="
-                                                        'file-input-' +
-                                                        subChild.id
-                                                    "
-                                                    style="display: none"
-                                                    @change="
-                                                        handleFileUpload(
-                                                            $event,
-                                                            subChild.id
-                                                        )
-                                                    "
-                                                />
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </td>
-                    </tr>
-                </tbody>
             </table>
+            <!-- Conteneur pour le body avec scroll -->
+            <div class="scroll-container">
+                <table class="table-categories">
+                    <tbody>
+                        <tr
+                            v-for="(row, rowIndex) in getFlattenedCategories()"
+                            :key="rowIndex"
+                            :style="{ backgroundColor: getCategoryColor(row.category.id, 'category') }"
+                        >
+                            <!-- Main Category Section -->
+                            <td>{{ row.category.name }}</td>
+                            <!-- Main Category Image Section -->
+                            <td>
+                                <div v-if="isFirstOccurrence(rowIndex, 'category')" class="image-button-container">
+                                    <!-- Rendre l'image cliquable ou "Inserer" -->
+                                    <div v-if="row.category.image">
+                                        <img
+                                            :src="row.category.image"
+                                            alt="Image de la catégorie"
+                                            class="category-image mr-2"
+                                            style="height: 40px; width: 40px"
+                                            @click="triggerFileInput(row.category.id, 'main')"
+                                        />
+                                    </div>
+                                    <a v-else href="#" @click.prevent="triggerFileInput(row.category.id, 'main')" class="image-upload-link">
+                                        Inserer
+                                    </a>
+                                    <input
+                                        type="file"
+                                        :id="'file-input-main-' + row.category.id"
+                                        style="display: none"
+                                        @change="handleFileUpload($event, row.category.id, 'main')"
+                                    />
+                                </div>
+                            </td>
+
+                            <!-- Sub-category -->
+                            <td :style="{ backgroundColor: getCategoryColor(row.subCategory.id, 'subCategory') }">
+                                {{ row.subCategory.name }}
+                            </td>
+                            <!-- Sub-category Image Section -->
+                            <td>
+                                <div v-if="isFirstOccurrence(rowIndex, 'subCategory')" class="image-button-container">
+                                    <!-- Rendre l'image cliquable ou "Inserer" -->
+                                    <div v-if="row.subCategory.image">
+                                        <img
+                                            :src="row.subCategory.image"
+                                            alt="Image de la sous-catégorie"
+                                            class="category-image mr-2"
+                                            style="height: 40px; width: 40px"
+                                            @click="triggerFileInput(row.subCategory.id, 'sub')"
+                                        />
+                                    </div>
+                                    <a v-else href="#" @click.prevent="triggerFileInput(row.subCategory.id, 'sub')" class="image-upload-link">
+                                        Inserer
+                                    </a>
+                                    <input
+                                        type="file"
+                                        :id="'file-input-sub-' + row.subCategory.id"
+                                        style="display: none"
+                                        @change="handleFileUpload($event, row.subCategory.id, 'sub')"
+                                    />
+                                </div>
+                            </td>
+
+                            <!-- Sub-sub-category -->
+                            <td>{{ row.subSubCategory.name }}</td>
+
+                            <!-- Sub-sub-category Image Section -->
+                            <td>
+                                <div class="image-button-container">
+                                    <!-- Rendre l'image cliquable ou "Inserer" -->
+                                    <div v-if="row.subSubCategory.image">
+                                        <img
+                                            :src="row.subSubCategory.image"
+                                            alt="Image de la sous-sous-catégorie"
+                                            class="category-image mr-2"
+                                            style="height: 40px; width: 40px"
+                                            @click="triggerFileInput(row.subSubCategory.id, 'sub-sub')"
+                                        />
+                                    </div>
+                                    <a v-else href="#" @click.prevent="triggerFileInput(row.subSubCategory.id, 'sub-sub')" class="image-upload-link">
+                                        Inserer
+                                    </a>
+                                    <input
+                                        type="file"
+                                        :id="'file-input-' + row.subSubCategory.id"
+                                        style="display: none"
+                                        @change="handleFileUpload($event, row.subSubCategory.id, 'sub-sub')"
+                                    />
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </template>
+
 
 <script>
 export default {
     data() {
         return {
             categories: [],
+            predefinedColors: ['#FFCDD2', '#E1BEE7', '#BBDEFB', '#C8E6C9', '#FFF9C4', '#FFCC80'], // Palette de couleurs prédéfinie
         };
     },
     mounted() {
@@ -131,67 +136,124 @@ export default {
                     console.error("Error fetching categories:", error);
                 });
         },
-        uploadImage(categoryId) {
-            // Ouvre la boîte de dialogue pour sélectionner une image
-            const inputElement = document.getElementById(
-                "file-input-" + categoryId
-            );
-            inputElement.click();
-        },
-        handleFileUpload(event, categoryId) {
-            const file = event.target.files[0];
-            if (file) {
-                const formData = new FormData();
-                formData.append("image", file);
-                formData.append("category_id", categoryId);
+        triggerFileInput(categoryId, type = "sub-sub") {
+        let inputElementId;
+        if (type === "main") {
+            inputElementId = "file-input-main-" + categoryId;
+        } else if (type === "sub") {
+            inputElementId = "file-input-sub-" + categoryId;
+        } else {
+            inputElementId = "file-input-" + categoryId;
+        }
+        const inputElement = document.getElementById(inputElementId);
+        if (inputElement) {
+            inputElement.click(); // Simuler le clic
+        } else {
+            console.error(`Impossible de trouver l'input pour la catégorie ${categoryId}`);
+        }
+    },
 
-                // Faire une requête API pour télécharger l'image
-                axios
-                    .post(
-                        "/api/categories/" + categoryId + "/upload-image",
-                        formData,
-                        {
-                            headers: {
-                                "Content-Type": "multipart/form-data",
-                            },
-                        }
-                    )
-                    .then((response) => {
-                        // Mettre à jour l'image localement pour la sous-sous-catégorie
-                        const newImagePath = response.data.path; // Le chemin de l'image retourné par l'API
+    handleFileUpload(event, categoryId, type = "sub-sub") {
+        const file = event.target.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append("image", file);
+            formData.append("category_id", categoryId);
 
-                        // Trouver la sous-sous-catégorie correspondante et mettre à jour son image
-                        this.updateCategoryImage(categoryId, newImagePath);
-                    })
-                    .catch((error) => {
-                        console.error(
-                            "Erreur lors du téléchargement de l'image :",
-                            error
-                        );
-                    });
+            // Requête API pour uploader l'image
+            axios.post(`/api/categories/${categoryId}/upload-image`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            })
+            .then((response) => {
+                const newImagePath = response.data.path;
+                this.updateCategoryImage(categoryId, newImagePath, type);
+            })
+            .catch((error) => {
+                console.error("Erreur lors du téléchargement de l'image :", error);
+            });
+        }
+    },
+
+    updateCategoryImage(categoryId, newImagePath, type = "sub-sub") {
+        this.categories.forEach((category) => {
+            if (type === "main" && category.id === categoryId) {
+                this.$set(category, "image", newImagePath);
             }
-        },
-        updateCategoryImage(categoryId, newImagePath) {
-    // Parcourir les catégories pour trouver la sous-sous-catégorie à mettre à jour
-    this.categories.forEach(category => {
-      category.children.forEach(subCategory => {
-        subCategory.children.forEach(subSubCategory => {
-          if (subSubCategory.id === categoryId) {
-            // Utiliser Vue.set pour que la mise à jour soit réactive
-            this.$set(subSubCategory, 'image', newImagePath);
-          }
+            category.children.forEach((subCategory) => {
+                if (type === "sub" && subCategory.id === categoryId) {
+                    this.$set(subCategory, "image", newImagePath);
+                }
+                subCategory.children.forEach((subSubCategory) => {
+                    if (type === "sub-sub" && subSubCategory.id === categoryId) {
+                        this.$set(subSubCategory, "image", newImagePath);
+                    }
+                });
+            });
         });
-      });
-    });
-  }
+    },
+
+        getFlattenedCategories() {
+            const rows = [];
+            this.categories.forEach((category) => {
+                category.children.forEach((subCategory) => {
+                    if (subCategory.children.length > 0) {
+                        subCategory.children.forEach((subSubCategory) => {
+                            rows.push({
+                                category: category,
+                                subCategory: subCategory,
+                                subSubCategory: subSubCategory,
+                            });
+                        });
+                    } else {
+                        rows.push({
+                            category: category,
+                            subCategory: subCategory,
+                            subSubCategory: { name: "N/A", image: null }, // Placeholder
+                        });
+                    }
+                });
+            });
+            return rows;
+        },
+
+        isFirstOccurrence(index, type) {
+            const rows = this.getFlattenedCategories();
+
+            if (type === "category") {
+                return index === 0 || rows[index].category.id !== rows[index - 1].category.id;
+            }
+
+            if (type === "subCategory") {
+                return index === 0 || rows[index].subCategory.id !== rows[index - 1].subCategory.id;
+            }
+
+            return false;
+        },
+
+        // Récupérer une couleur en fonction de l'ID
+        getCategoryColor(id, type) {
+            if (type === 'category') {
+                const colorIndex = id % this.predefinedColors.length; // Calcul de l'index
+                return this.predefinedColors[colorIndex]; // Retourner une couleur prédéfinie
+            }
+
+            if (type === 'subCategory') {
+                const colorIndex = id % this.predefinedColors.length; // Même logique pour les sous-catégories
+                return this.predefinedColors[(colorIndex + 1) % this.predefinedColors.length]; // Décaler la couleur des sous-catégories
+            }
+
+            return '#FFFFFF'; // Retourner blanc par défaut
+        },
     },
 };
 </script>
+
 <style scoped>
 .table-categories {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
     font-size: 16px;
     text-align: left;
     border-radius: 8px;
@@ -199,10 +261,13 @@ export default {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.table-categories thead {
-    background-color: #f9fafb;
-    color: #6b7280;
+.table-categories thead th {
+    background-color: #4c7dfb; /* Bleu pour l'en-tête */
+    color: white;
     font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 2;
 }
 
 .table-categories th,
@@ -218,62 +283,34 @@ export default {
     background-color: #f3f4f6;
 }
 
-.table-categories tbody tr:last-child {
-    border-bottom: none;
+/* Conteneur de défilement */
+.scroll-container {
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-.table-categories tbody td {
-    color: #6b7280;
-}
-
-.table-categories tbody td:first-child {
-    font-weight: 600;
-}
-
-.table-categories tbody td:nth-child(2) {
-    color: #6b7280;
-}
-
-.table-categories tbody td:nth-child(3) {
-    color: #6b7280;
-}
-
-.table-categories ul {
-    list-style-type: none;
-    padding-left: 0;
-    margin: 0;
-}
-
-.table-categories ul li {
-    padding: 5px 0;
-}
-
-.table-categories ul li ul {
-    padding-left: 20px;
-}
-.image-upload-container {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Espace entre l'image et le bouton */
+/* Bouton d'image */
+.image-button-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .magasin-image {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
-  border-radius: 4px;
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
 }
 
-.image-upload-btn {
-  padding: 5px 10px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+/* Lien pour les boutons */
+.image-upload-link {
+    color: #4c7dfb; /* Bleu pour les liens */
+    text-decoration: underline; /* Souligné */
+    cursor: pointer;
 }
 
-.image-upload-btn:hover {
-  background-color: #45a049;
+.image-upload-link:hover {
+    color: #357ae8; /* Changement de couleur au survol */
 }
 </style>

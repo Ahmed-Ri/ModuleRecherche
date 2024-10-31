@@ -2,7 +2,7 @@
   <v-app>
     <v-main>
      <magasins-table></magasins-table>
-     <recherche></recherche>
+     <!-- <recherche></recherche> -->
      <category></category>
     </v-main>
   </v-app>
